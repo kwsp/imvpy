@@ -52,8 +52,10 @@ def get_static_paths(paths) -> List[str]:
     return ["/s?path=" + str(path).replace(" ", "%20") for path in paths]
 
 
+IMAGE_TYPES = ("png", "jpg", "jpeg", "gif")
+
+
 def glob_all_images(path, recursive=False) -> List[pathlib.Path]:
-    IMAGE_TYPES = ("png", "jpg", "jpeg", "gif")
 
     if type(path) == str:
         path = pathlib.Path(path).expanduser()
@@ -64,6 +66,7 @@ def glob_all_images(path, recursive=False) -> List[pathlib.Path]:
 
     for img_type in IMAGE_TYPES:
         image_list.extend(list(path.glob(wildcard + img_type)))
+        image_list.extend(list(path.glob(wildcard + img_type.upper())))
 
     return image_list
 
