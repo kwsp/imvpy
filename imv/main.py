@@ -1,14 +1,23 @@
 import pathlib
 from typing import List
 
-from flask import Flask, request, make_response, render_template, send_file
+from flask import Flask, request, make_response, send_file
+from flask import render_template, render_template_string
+
+from jinja2 import TemplateNotFound
+
+from imv.templates.index import INDEX_TMPL
 
 app = Flask(__name__)
 
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    try:
+        return render_template("index.html")
+    except TemplateNotFound:
+
+        return render_template_string(INDEX_TMPL)
 
 
 @app.route("/", methods=["POST"])
@@ -19,9 +28,15 @@ def index_post():
     img_paths = glob_all_images(path, recursive=recursive)
     img_paths = get_static_paths(img_paths)
     print(img_paths)
-    return render_template(
-        "index.html", path=path, img_paths=img_paths, recursive=recursive
-    )
+
+    try:
+        return render_template(
+            "index.html", path=path, img_paths=img_paths, recursive=recursive
+        )
+    except TemplateNotFound:
+        return render_template_string(
+            INDEX_TMPL, path=path, img_paths=img_paths, recursive=recursive
+        )
 
 
 NOT_FOUND_RESPONSE = ("Not found", 404)
@@ -29,6 +44,7 @@ NOT_FOUND_RESPONSE = ("Not found", 404)
 
 @app.route("/s")
 def s():
+    "Static files handler"
     path = request.args.get("path", None)
     try:
         path = pathlib.Path(path.replace("%20", " ")).expanduser()
