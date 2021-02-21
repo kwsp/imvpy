@@ -1,42 +1,49 @@
 import pathlib
 from typing import List
 
-from flask import Flask, request, make_response, send_file
-from flask import render_template, render_template_string
+from flask import Flask, request, make_response, redirect
+from flask import render_template
 
-from jinja2 import TemplateNotFound
-
-from imv.templates.index import INDEX_TMPL
-
-app = Flask(__name__)
+here = pathlib.Path(__file__).parent
+app = Flask(
+    __name__,
+    static_folder=str(here / "static"),
+    template_folder=str(here / "templates"),
+)
 
 
 @app.route("/")
 def index():
-    try:
-        return render_template("index.html")
-    except TemplateNotFound:
+    path: pathlib.Path = (
+        pathlib.Path(request.args.get("path", ".")).expanduser().resolve()
+    )
+    recursive: bool = True if request.args.get("recursive") else False
 
-        return render_template_string(INDEX_TMPL)
+    listdir = [
+        ("/?path=" + str(p.resolve()), p.name) for p in path.glob("*") if p.is_dir()
+    ]
+
+    img_paths = glob_all_images(path, recursive=recursive)
+    img_paths = get_static_paths(img_paths)
+
+    return render_template(
+        "index.html",
+        path=str(path),
+        img_paths=img_paths,
+        recursive=recursive,
+        listdir=listdir,
+    )
 
 
 @app.route("/", methods=["POST"])
 def index_post():
     path = request.form.get("path")
     recursive = request.form.get("recursive")
+    redir_url = f"/?path={path}"
+    if recursive:
+        redir_url += f"&recursive={recursive}"
 
-    img_paths = glob_all_images(path, recursive=recursive)
-    img_paths = get_static_paths(img_paths)
-    print(img_paths)
-
-    try:
-        return render_template(
-            "index.html", path=path, img_paths=img_paths, recursive=recursive
-        )
-    except TemplateNotFound:
-        return render_template_string(
-            INDEX_TMPL, path=path, img_paths=img_paths, recursive=recursive
-        )
+    return redirect(redir_url)
 
 
 NOT_FOUND_RESPONSE = ("Not found", 404)
@@ -57,7 +64,6 @@ def s():
     with path.open("rb") as f:
         data = f.read()
 
-    print(path.suffix)
     response = make_response(data)
     response.headers.set("Content-Type", "image/" + path.suffix[1:])
 
@@ -68,19 +74,15 @@ def get_static_paths(paths) -> List[str]:
     return ["/s?path=" + str(path).replace(" ", "%20") for path in paths]
 
 
-IMAGE_TYPES = ("png", "jpg", "jpeg", "gif")
+MEDIA_TYPES = ("png", "jpg", "jpeg", "gif", "webp", "mp4", "webm")
 
 
-def glob_all_images(path, recursive=False) -> List[pathlib.Path]:
-
-    if type(path) == str:
-        path = pathlib.Path(path).expanduser()
-
+def glob_all_images(path: pathlib.Path, recursive=False) -> List[pathlib.Path]:
     image_list = []
 
     wildcard = "**/*." if recursive else "*."
 
-    for img_type in IMAGE_TYPES:
+    for img_type in MEDIA_TYPES:
         image_list.extend(list(path.glob(wildcard + img_type)))
         image_list.extend(list(path.glob(wildcard + img_type.upper())))
 
