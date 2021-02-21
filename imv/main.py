@@ -1,8 +1,11 @@
-import pathlib
 from typing import List
+import logging
+import pathlib
 
 from flask import Flask, request, make_response, redirect
 from flask import render_template
+
+logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
 here = pathlib.Path(__file__).parent
 app = Flask(
