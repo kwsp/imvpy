@@ -27,6 +27,15 @@
 </ul>
 {% endif %}
 
+{% if vid_paths %}
+{% for vid_path in vid_paths %}
+<video controls>
+  <source src={{ vid_path[0] }} type={{ vid_path[1] }}>
+  Your browser does not support the video tag.
+</video>
+{% endfor %}
+{% endif %}
+
 {% if img_paths %}
 {% for img_path in img_paths %}
 <a href={{ img_path }}><img src={{ img_path }}></a>

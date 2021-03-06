@@ -1,11 +1,12 @@
-from typing import List
+from typing import List, Iterable
 import logging
+import mimetypes
 import pathlib
 
 from flask import Flask, request, make_response, redirect
 from flask import render_template
 
-logging.getLogger("werkzeug").setLevel(logging.ERROR)
+# logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
 here = pathlib.Path(__file__).parent
 app = Flask(
@@ -13,6 +14,9 @@ app = Flask(
     static_folder=str(here / "static"),
     template_folder=str(here / "templates"),
 )
+
+IMG_TYPES = ("png", "jpg", "jpeg", "gif", "webp")
+VID_TYPES = ("mp4", "webm")
 
 
 @app.route("/")
@@ -26,13 +30,17 @@ def index():
         ("/?path=" + str(p.resolve()), p.name) for p in path.glob("*") if p.is_dir()
     ]
 
-    img_paths = glob_all_images(path, recursive=recursive)
+    img_paths = _glob(path, recursive=recursive, exts=IMG_TYPES)
     img_paths = get_static_paths(img_paths)
+
+    vid_paths = _glob(path, recursive=recursive, exts=VID_TYPES)
+    vid_paths = [(s, mimetypes.guess_type(s)[0]) for s in get_static_paths(vid_paths)]
 
     return render_template(
         "index.html",
         path=str(path),
         img_paths=img_paths,
+        vid_paths=vid_paths,
         recursive=recursive,
         listdir=listdir,
     )
@@ -77,19 +85,17 @@ def get_static_paths(paths) -> List[str]:
     return ["/s?path=" + str(path).replace(" ", "%20") for path in paths]
 
 
-MEDIA_TYPES = ("png", "jpg", "jpeg", "gif", "webp", "mp4", "webm")
-
-
-def glob_all_images(path: pathlib.Path, recursive=False) -> List[pathlib.Path]:
-    image_list = []
-
+def _glob(
+    path: pathlib.Path, recursive: bool = False, exts: Iterable = IMG_TYPES
+) -> List[pathlib.Path]:
+    resources = []
     wildcard = "**/*." if recursive else "*."
 
-    for img_type in MEDIA_TYPES:
-        image_list.extend(list(path.glob(wildcard + img_type)))
-        image_list.extend(list(path.glob(wildcard + img_type.upper())))
+    for ext in exts:
+        resources.extend(list(path.glob(wildcard + ext)))
+        resources.extend(list(path.glob(wildcard + ext.upper())))
 
-    return image_list
+    return resources
 
 
 if __name__ == "__main__":
