@@ -1,4 +1,5 @@
 from typing import List, Iterable
+from urllib.parse import quote
 import logging
 import mimetypes
 import pathlib
@@ -27,7 +28,7 @@ def index():
     recursive: bool = True if request.args.get("recursive") else False
 
     listdir = [
-        ("/?path=" + str(p.resolve()), p.name) for p in path.glob("*") if p.is_dir()
+        ("/?path=" + quote(str(p.resolve())), p.name) for p in path.glob("*") if p.is_dir()
     ]
 
     img_paths = _glob(path, recursive=recursive, exts=IMG_TYPES)
