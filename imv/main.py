@@ -19,19 +19,21 @@ app = Flask(
 IMG_TYPES = ("png", "jpg", "jpeg", "gif", "webp")
 VID_TYPES = ("mp4", "webm")
 
+def escape(path) -> str:
+    return quote(str(path))
+
 
 @app.route("/")
 def index():
-    path: Path = (
-        Path(request.args.get("path", ".")).expanduser().resolve()
-    )
+    path: Path = Path(request.args.get("path", ".")).expanduser().resolve()
     recursive: bool = True if request.args.get("recursive") else False
 
     listdir = [
-        (get_static_link(p.resolve()), p.name)
+        ("?path=" + escape(p.resolve()), p.name + "/")
         for p in path.glob("*")
         if p.is_dir()
     ]
+    listdir.sort()
 
     img_paths = _glob(path, recursive=recursive, exts=IMG_TYPES)
     img_paths = get_static_links(img_paths)
@@ -42,7 +44,7 @@ def index():
     return render_template(
         "index.html",
         path=str(path),
-        parent_link="/?path=" + str(path.parent),
+        parent_link="/?path=" + escape(path.parent),
         img_paths=img_paths,
         vid_paths=vid_paths,
         recursive=recursive,
@@ -90,7 +92,7 @@ def get_static_links(paths) -> List[str]:
 
 
 def get_static_link(path: Union[Path, str]) -> str:
-    return "/s?path=" + quote(str(path))
+    return "/s?path=" + escape(path)
 
 
 def _glob(
