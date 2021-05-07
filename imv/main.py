@@ -1,15 +1,15 @@
-from typing import List, Iterable
+from typing import List, Iterable, Union
 from urllib.parse import quote
+from pathlib import Path
 import logging
 import mimetypes
-import pathlib
 
 from flask import Flask, request, make_response, redirect
 from flask import render_template
 
 # logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
-here = pathlib.Path(__file__).parent
+here = Path(__file__).parent
 app = Flask(
     __name__,
     static_folder=str(here / "static"),
@@ -22,24 +22,27 @@ VID_TYPES = ("mp4", "webm")
 
 @app.route("/")
 def index():
-    path: pathlib.Path = (
-        pathlib.Path(request.args.get("path", ".")).expanduser().resolve()
+    path: Path = (
+        Path(request.args.get("path", ".")).expanduser().resolve()
     )
     recursive: bool = True if request.args.get("recursive") else False
 
     listdir = [
-        ("/?path=" + quote(str(p.resolve())), p.name) for p in path.glob("*") if p.is_dir()
+        (get_static_link(p.resolve()), p.name)
+        for p in path.glob("*")
+        if p.is_dir()
     ]
 
     img_paths = _glob(path, recursive=recursive, exts=IMG_TYPES)
-    img_paths = get_static_paths(img_paths)
+    img_paths = get_static_links(img_paths)
 
     vid_paths = _glob(path, recursive=recursive, exts=VID_TYPES)
-    vid_paths = [(s, mimetypes.guess_type(s)[0]) for s in get_static_paths(vid_paths)]
+    vid_paths = [(s, mimetypes.guess_type(s)[0]) for s in get_static_links(vid_paths)]
 
     return render_template(
         "index.html",
         path=str(path),
+        parent_link="/?path=" + str(path.parent),
         img_paths=img_paths,
         vid_paths=vid_paths,
         recursive=recursive,
@@ -66,7 +69,7 @@ def s():
     "Static files handler"
     path = request.args.get("path", None)
     try:
-        path = pathlib.Path(path.replace("%20", " ")).expanduser()
+        path = Path(path.replace("%20", " ")).expanduser()
     except TypeError:
         return NOT_FOUND_RESPONSE
 
@@ -82,13 +85,17 @@ def s():
     return response
 
 
-def get_static_paths(paths) -> List[str]:
-    return ["/s?path=" + str(path).replace(" ", "%20") for path in paths]
+def get_static_links(paths) -> List[str]:
+    return [get_static_link(path) for path in paths]
+
+
+def get_static_link(path: Union[Path, str]) -> str:
+    return "/s?path=" + quote(str(path))
 
 
 def _glob(
-    path: pathlib.Path, recursive: bool = False, exts: Iterable = IMG_TYPES
-) -> List[pathlib.Path]:
+    path: Path, recursive: bool = False, exts: Iterable = IMG_TYPES
+) -> List[Path]:
     resources = []
     wildcard = "**/*." if recursive else "*."
 

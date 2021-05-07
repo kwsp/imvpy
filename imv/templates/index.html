@@ -7,6 +7,7 @@
 <p>Enter the directory containing images you want to view into the box below</p>
 
 <form method="POST">
+  <a href={{ parent_link }}>Back</a>
   <label for="path">Directory: </label>
   <input name="path" value={{ path }}>
   <label for="recursive">Recursive</label>
@@ -38,6 +39,6 @@
 
 {% if img_paths %}
 {% for img_path in img_paths %}
-<a href={{ img_path }}><img src={{ img_path }}></a>
+<a href={{ img_path }}><img src={{ img_path }} loading="lazy"></a>
 {% endfor %}
 {% endif %}
