@@ -1,5 +1,5 @@
 <!doctype html>
-<link rel="stylesheet" href="/style.css" type="text/css">
+<link rel="stylesheet" href={{ url_for("static", filename="style.css") }} type="text/css">
 <title>Image Viewer</title>
 
 <a href="/"><h2>Image Viewer</h2></a>
@@ -21,7 +21,7 @@
 {% if listdir %}
 <ul>
 {% for item in listdir %}
-<li><a href={{ item[0] }} style="text-decoration: none;">{{ item[1] }}</a></li>
+<li><a href={{ item[0] }}>{{ item[1] }}</a></li>
 
 {% endfor %}
 </ul>
