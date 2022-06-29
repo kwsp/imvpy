@@ -2,13 +2,11 @@ from typing import List, Iterable, Union
 from urllib.parse import quote
 from pathlib import Path
 
-# import logging
 import mimetypes
 
-from flask import Flask, request, make_response, redirect
+from flask import Flask, request, redirect, send_file
 from flask import render_template
 
-# logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
 here = Path(__file__).parent
 app = Flask(
@@ -83,14 +81,8 @@ def s():
 
     if not path.exists():
         return NOT_FOUND_RESPONSE
-
-    with path.open("rb") as f:
-        data = f.read()
-
-    response = make_response(data)
-    response.headers.set("Content-Type", "image/" + path.suffix[1:])
-
-    return response
+    
+    return send_file(path, mimetype="image/" + path.suffix[1:], etag=True)
 
 
 def get_static_link(path: Union[Path, str]) -> str:
