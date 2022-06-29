@@ -1,21 +1,13 @@
 <!doctype html>
 <link rel="stylesheet" href={{ url_for("static", filename="style.css") }} type="text/css">
 <title>Image Viewer</title>
-<style>
-img {
-    max-width: 100%;
-}
-video {
-    max-width: 100%;
-}
-</style>
 
 <a href="/"><h2>Image Viewer</h2></a>
 
 <p>Enter the directory containing images you want to view into the box below</p>
 
+<a href={{ parent_link }}>Back</a>
 <form method="POST">
-  <a href={{ parent_link }}>Back</a>
   <label for="path">Directory: </label>
   <input name="path" value={{ path }}>
   <label for="recursive">Recursive</label>
@@ -26,6 +18,7 @@ video {
   {% endif %}
   <input type="submit" value="View">
 </form>
+<br>
 
 {% if listdir %}
 <ul>
