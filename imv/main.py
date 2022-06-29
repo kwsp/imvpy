@@ -1,7 +1,8 @@
 from typing import List, Iterable, Union
 from urllib.parse import quote
 from pathlib import Path
-import logging
+
+# import logging
 import mimetypes
 
 from flask import Flask, request, make_response, redirect
@@ -18,6 +19,7 @@ app = Flask(
 
 IMG_TYPES = ("png", "jpg", "jpeg", "gif", "webp")
 VID_TYPES = ("mp4", "webm")
+
 
 def escape(path) -> str:
     return quote(str(path))
@@ -36,10 +38,11 @@ def index():
     listdir.sort()
 
     img_paths = _glob(path, recursive=recursive, exts=IMG_TYPES)
-    img_paths = get_static_links(img_paths)
+    img_paths = [get_static_link(path) for path in img_paths]
 
     vid_paths = _glob(path, recursive=recursive, exts=VID_TYPES)
-    vid_paths = [(s, mimetypes.guess_type(s)[0]) for s in get_static_links(vid_paths)]
+    vid_paths = [get_static_link(path) for path in vid_paths]
+    vid_paths = [(s, mimetypes.guess_type(s)[0]) for s in vid_paths]
 
     return render_template(
         "index.html",
@@ -70,6 +73,9 @@ NOT_FOUND_RESPONSE = ("Not found", 404)
 def s():
     "Static files handler"
     path = request.args.get("path", None)
+    if not path:
+        return
+
     try:
         path = Path(path.replace("%20", " ")).expanduser()
     except TypeError:
@@ -85,10 +91,6 @@ def s():
     response.headers.set("Content-Type", "image/" + path.suffix[1:])
 
     return response
-
-
-def get_static_links(paths) -> List[str]:
-    return [get_static_link(path) for path in paths]
 
 
 def get_static_link(path: Union[Path, str]) -> str:
